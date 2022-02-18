@@ -17,15 +17,18 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
+import { useWeb3React } from '@web3-react/core';
 import "./App.css";
 const Web3 = require("web3");
 
 const App: React.FunctionComponent = () => {
   const [nep, setNep] = useState<Number | null>(0.0);
   const [busd, setBUSD] = useState<Number | null>(0.0);
-  const [open, setOpen] = useState(false);
-  const [openDetail, setOpenDetail] = useState(false);
+  const [open, setOpen] = useState<boolean>(false);
+  const [openDetail, setOpenDetail] = useState<boolean>(false);
   const [address, setAddress] = useState<String | null>("");
+  const [myBalance, setBalance] = useState<Number | null>(0);
+  const { deactivate } = useWeb3React();
 
   const calculateBUSD = (value: Number) => {
     setBUSD(Number(value) * 3);
@@ -39,12 +42,21 @@ const App: React.FunctionComponent = () => {
   };
 
   const detailModalClose = () => {
+    deactivate();
     setOpenDetail(false);
   };
 
   const handleClose = () => {
     setOpen(false);
   };
+
+  const getBalance = (userAddress: String) => {
+    const provider = new Web3((window as any).web3.currentProvider);
+
+    provider.eth.getBalance(userAddress, (err: any, balance: any) => {
+      setBalance(balance/(10**18));
+    });
+  }
 
   const getAccount = async () => {
     if ((window as any).ethereum) {
@@ -60,10 +72,11 @@ const App: React.FunctionComponent = () => {
     getAccount().then((res) => {
       if (res !== false) {
         setAddress(res);
+        handleClose();
+        getBalance(res);
+        setOpenDetail(true);
       }
     });
-    handleClose();
-    setOpenDetail(true);
   };
 
   return (
@@ -112,6 +125,7 @@ const App: React.FunctionComponent = () => {
           </CardActions>
         </Card>
       </header>
+      {/* wallet connect modal */}
       <Dialog
         open={open}
         onClose={handleClose}
@@ -166,7 +180,7 @@ const App: React.FunctionComponent = () => {
                   <TableCell component="th" scope="row">
                     Account
                   </TableCell>
-                  <TableCell align="right">111</TableCell>
+                  <TableCell align="right">{address}</TableCell>
                 </TableRow>
                 <TableRow
                   sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
@@ -174,7 +188,7 @@ const App: React.FunctionComponent = () => {
                   <TableCell component="th" scope="row">
                     ChainID
                   </TableCell>
-                  <TableCell align="right">111</TableCell>
+                  <TableCell align="right">97</TableCell>
                 </TableRow>
                 <TableRow
                   sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
@@ -182,7 +196,7 @@ const App: React.FunctionComponent = () => {
                   <TableCell component="th" scope="row">
                     Balance
                   </TableCell>
-                  <TableCell align="right">111</TableCell>
+                  <TableCell align="right">{myBalance}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
